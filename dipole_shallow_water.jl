@@ -49,7 +49,7 @@ compute!(ω)
 compute!(s)
 
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-3, stop_time=100)
+simulation = Simulation(model, Δt=1e-3, stop_time=10)
 
 @info "Set up progress message and timestep wizard"
 wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-3)
@@ -108,9 +108,9 @@ n = Observable(1)
 s = @lift s_timeseries[$n]
 h = @lift h_timeseries[$n]
 
-ωlims = (minimum(abs,interior(ω_timeseries)), maximum(abs,interior(ω_timeseries)))
-slims = (minimum(abs,interior(s_timeseries)), maximum(abs,interior(s_timeseries)))
-hlims = (minimum(abs,interior(h_timeseries)), maximum(abs,interior(h_timeseries)))
+ωlims = (minimum(interior(ω_timeseries)), maximum(interior(ω_timeseries)))
+slims = (minimum(interior(s_timeseries)), maximum(interior(s_timeseries)))
+hlims = (minimum(interior(h_timeseries)), maximum(interior(h_timeseries)))
 
 hm_ω = heatmap!(ax_ω, x, y, ω, colormap=:balance, colorrange = ωlims)
 Colorbar(fig[2, 2], hm_ω)
