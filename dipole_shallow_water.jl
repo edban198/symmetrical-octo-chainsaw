@@ -174,29 +174,42 @@ selected_times = times[selected_indices]
 fig = Figure(size=(3400, 1600))
 Label(fig[1, 1:4], "Snapshots of the evolution of a dipole in shallow water", fontsize=64)
 
+axis_kwargs_2 = (xlabel="x", ylabel="y",
+                 xlabelsize=42, ylabelsize=42,
+                 xticklabelsize=32, yticklabelsize=32,
+                 limits=((0, 2π), (-10, 10)),
+                 aspect=DataAspect())
+
+# Create dedicated space for the left column labels
+row_titles_width = 100  # Adjust the width of the first column to leave enough space for plots
+
+fig.layout[2:4, 0] = GridLayout(width=row_titles_width)
+
+# Add row titles (properly aligned in their own space)
+Label(fig.layout[2, 0], L"Vorticity $ω$", rotation=π/2, fontsize=42, halign=:center)
+Label(fig.layout[3, 0], L"Velocity Magnitude $|v|$", rotation=π/2, fontsize=42, halign=:center)
+Label(fig.layout[4, 0], L"Height $h$", rotation=π/2, fontsize=42, halign=:center)
+
+# Plot timesnaps
 for (i, idx) in enumerate(selected_indices)
     ω_snapshot = ω_timeseries[idx]
     s_snapshot = s_timeseries[idx]
     h_snapshot = h_timeseries[idx]
 
-    ax_ω = Axis(fig[2, i]; title=@sprintf("t = %.1f", selected_times[i]), titlesize=42,
-                xlabel="x", ylabel="y", limits=((0, 2π), (-10, 10))
-    )
+    ax_ω = Axis(fig[2, i]; title=@sprintf("t = %.1f", selected_times[i]), titlesize=42, axis_kwargs_2...)
     heatmap!(ax_ω, x, y, ω_snapshot, colormap=:balance, colorrange=ωlims)
 
-    ax_s = Axis(fig[3, i];
-                xlabel="x", ylabel="y", limits=((0, 2π), (-10, 10))
-    )
+    ax_s = Axis(fig[3, i]; axis_kwargs_2...)
     heatmap!(ax_s, x, y, s_snapshot, colormap=:speed, colorrange=slims)
 
-    ax_h = Axis(fig[4, i];
-                xlabel="x", ylabel="y", limits=((0, 2π), (-10, 10))
-    )
+    ax_h = Axis(fig[4, i]; axis_kwargs_2...)
     heatmap!(ax_h, x, y, h_snapshot, colormap=:balance, colorrange=hlims)
 end
 
-Colorbar(fig[2,5]; colormap=:balance, colorrange=ωlims)
-Colorbar(fig[3,5]; colormap=:speed, colorrange=slims)
-Colorbar(fig[4,5]; colormap=:balance, colorrange=hlims)
+# Add colorbars with larger ticks and labels
+Colorbar(fig[2, 5]; colormap=:balance, colorrange=ωlims, ticklabelsize=32, labelsize=32)
+Colorbar(fig[3, 5]; colormap=:speed, colorrange=slims, ticklabelsize=32, labelsize=32)
+Colorbar(fig[4, 5]; colormap=:balance, colorrange=hlims, ticklabelsize=32, labelsize=32)
 
+# Save the figure
 save("dipole_shallow_water_snapshots.png", fig)
