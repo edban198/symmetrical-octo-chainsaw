@@ -171,26 +171,32 @@ values = collect(range(1, stop=len, length=4))
 selected_indices = round.(Int, values)[1:4]
 selected_times = times[selected_indices]
 
-fig = Figure(resolution=(3600, 1600))
-Label(fig[1, 1:4], "Snapshots of the evolution of a dipole in shallow water", fontsize=24)
+fig = Figure(size=(3400, 1600))
+Label(fig[1, 1:4], "Snapshots of the evolution of a dipole in shallow water", fontsize=64)
 
 for (i, idx) in enumerate(selected_indices)
     ω_snapshot = ω_timeseries[idx]
     s_snapshot = s_timeseries[idx]
     h_snapshot = h_timeseries[idx]
 
-    ax_ω = Axis(fig[2, i]; title=@sprintf("t = %.1f", selected_times[i]),
+    ax_ω = Axis(fig[2, i]; title=@sprintf("t = %.1f", selected_times[i]), titlesize=42,
                 xlabel="x", ylabel="y", limits=((0, 2π), (-10, 10))
     )
     heatmap!(ax_ω, x, y, ω_snapshot, colormap=:balance, colorrange=ωlims)
 
-    ax_s = Axis(fig[3, i]; title=@sprintf("t = %.1f", selected_times[i]),
+    ax_s = Axis(fig[3, i];
                 xlabel="x", ylabel="y", limits=((0, 2π), (-10, 10))
     )
     heatmap!(ax_s, x, y, s_snapshot, colormap=:speed, colorrange=slims)
 
-    ax_h = Axis(fig[4, i]; title=@sprintf("t = %.1f", selected_times[i]),
+    ax_h = Axis(fig[4, i];
                 xlabel="x", ylabel="y", limits=((0, 2π), (-10, 10))
     )
     heatmap!(ax_h, x, y, h_snapshot, colormap=:balance, colorrange=hlims)
 end
+
+Colorbar(fig[2,5]; colormap=:balance, colorrange=ωlims)
+Colorbar(fig[3,5]; colormap=:speed, colorrange=slims)
+Colorbar(fig[4,5]; colormap=:balance, colorrange=hlims)
+
+save("dipole_shallow_water_snapshots.png", fig)
