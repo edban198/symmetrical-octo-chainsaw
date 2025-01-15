@@ -28,6 +28,9 @@ model = ShallowWaterModel(; grid, gravitational_acceleration, timestepper=:Runge
 @info "Set initial conditions"
 uh, vh, h = model.solution
 
+u = uh / h
+v = vh / h
+
 A₀, α₀, x₀, y₀, H = 1, 1, π, 0.5, 15
 
 uᵢ(x, y) = A₀ * 2 * (y - y₀) * α₀ * exp(-α₀ * ((x - x₀)^2 + (y - y₀)^2)) -
@@ -43,10 +46,8 @@ vhᵢ(x, y) = vᵢ(x, y) * h̄(x, y)
 set!(model, uh=uhᵢ, vh=vhᵢ, h=h̄)
 
 @info "Setting up fields"
-ω = ∂x(v) - ∂y(u)
-s = sqrt(u^2 + v^2)
-compute!(ω)
-compute!(s)
+ω = Field(∂x(v) - ∂y(u))
+s = Field(sqrt(u^2 + v^2))
 
 @info "Set up simulation"
 simulation = Simulation(model, Δt=1e-3, stop_time=10)
@@ -67,17 +68,28 @@ end
 add_callback!(simulation, progress_message, IterationInterval(100))
 
 @info "Set up output writers"
-fields_filename = joinpath(@__DIR__, "dipole_shallow_water_fields.jld2")
-simulation.output_writers[:fields] = JLD2OutputWriter(model, (; ω, s, h),
-                                                      filename=fields_filename,
-                                                      schedule=TimeInterval(0.5),
-                                                      overwrite_existing=true
+fields_filename = joinpath(@__DIR__, "dipole_shallow_water_fields")
+heights_filename = joinpath(@__DIR__, "dipole_shallow_water_heights")
+simulation.output_writers[:fields] = JLD2OutputWriter(model, (; ω, s),
+                                                      schedule = TimeInterval(0.5),
+                                                      filename = fields_filename * ".jld2",
+                                                      overwrite_existing = true
 )
+
+simulation.output_writers[:height] = JLD2OutputWriter(model, (; h),
+                                                      schedule = TimeInterval(0.5),
+                                                      filename = heights_filename * ".jld2",
+                                                      overwrite_existing = true)
 
 @info "Run the simulation"
 run!(simulation)
 
-ω_timeseries = FieldTimeSeries(fields_filename, "ω")
+@info "Load data from JLD2 file"
+ω_timeseries = FieldTimeSeries(fields_filename * ".jld2", "ω")
+s_timeseries = FieldTimeSeries(fields_filename * ".jld2", "s")
+h_timeseries = FieldTimeSeries(heights_filename * ".jld2", "h")
+
+times = ω_timeseries.times
 println("Saved times: ", ω_timeseries.times)
 
 # Visualization:
@@ -95,15 +107,6 @@ ax_h = Axis(fig[4, 1]; title=L"Height, $h$", axis_kwargs...)
 
 n = Observable(1)
 
-@info "Load data from JLD2 file"
-ω_timeseries = FieldTimeSeries(fields_filename, "ω")
-s_timeseries = FieldTimeSeries(fields_filename, "s")
-h_timeseries = FieldTimeSeries(fields_filename, "h")
-
-times = ω_timeseries.times
-
-n = Observable(1)
-
 ω = @lift ω_timeseries[$n]
 s = @lift s_timeseries[$n]
 h = @lift h_timeseries[$n]
@@ -112,13 +115,13 @@ h = @lift h_timeseries[$n]
 slims = (minimum(interior(s_timeseries)), maximum(interior(s_timeseries)))
 hlims = (minimum(interior(h_timeseries)), maximum(interior(h_timeseries)))
 
-hm_ω = heatmap!(ax_ω, x, y, ω, colormap=:balance, colorrange = ωlims)
+hm_ω = heatmap!(ax_ω, x, y, ω, colormap=:balance, colorrange=ωlims)
 Colorbar(fig[2, 2], hm_ω)
 
-hm_s = heatmap!(ax_s, x, y, s, colormap=:speed, colorrange = slims)
+hm_s = heatmap!(ax_s, x, y, s, colormap=:speed, colorrange=slims)
 Colorbar(fig[3, 2], hm_s)
 
-hm_h = heatmap!(ax_h, x, y, h, colormap=:balance, colorrange = hlims)
+hm_h = heatmap!(ax_h, x, y, h, colormap=:balance, colorrange=hlims)
 Colorbar(fig[4, 2], hm_h)
 
 #title = L"Total vorticity, ω from a dipole from the streamfunction $\Psi = A_{0}e^{-\alpha_{0}((x - x_{0})^2 + (y - y_{0})^2)} + A_{0}e^{-\alpha_{0}((x - x_{0})^2 + (y + y_{0})^2)}$ with $(x_{0},y_{0})=(\pi,0)$"
@@ -143,8 +146,6 @@ A₀ = 1
 α₀ = 1
 x₀ = π
 y₀ = 0.5
-
-# Define U(x, y) and V(x, y)
 
 # Evaluate U and V
 U_vals = uᵢ.(X, Y)
