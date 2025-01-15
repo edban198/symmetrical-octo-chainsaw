@@ -42,17 +42,15 @@ vhᵢ(x, y) = vᵢ(x, y) * h̄(x, y)
 set!(model, uh=uhᵢ, vh=vhᵢ, h=h̄)
 
 @info "Setting up fields"
-ω = Field(∂x(model.velocities.v) - ∂y(model.velocities.u))
-v_norm = Field(sqrt.(model.velocities.u^2 + model.velocities.v^2))
-compute!(ω)
-compute!(v_norm)
+ω = ∂x(v) - ∂y(u)
+s = sqrt(u^2 + v^2)
 
 @info "Set up simulation"
 simulation = Simulation(model, Δt=1e-2, stop_time=10)
 
 @info "Set up output writers"
 fields_filename = joinpath(@__DIR__, "dipole_shallow_water_fields.jld2")
-simulation.output_writers[:fields] = JLD2OutputWriter(model, (; ω, v_norm, h),
+simulation.output_writers[:fields] = JLD2OutputWriter(model, (; ω, s, h),
                                                       filename=fields_filename,
                                                       schedule=TimeInterval(1),
                                                       overwrite_existing=true)
@@ -70,7 +68,7 @@ fig = Figure(size=(1200, 1600), fontsize=20)
 axis_kwargs = (xlabel="x", ylabel="y")
 
 ax_ω = Axis(fig[2, 1]; title=L"Vorticity, $ω$", axis_kwargs...)
-ax_v_norm = Axis(fig[3, 1]; title=L"Velocity magnitude, $|\mathbf{v}|$", axis_kwargs...)
+ax_s = Axis(fig[3, 1]; title=L"Velocity magnitude, $|\mathbf{v}|$", axis_kwargs...)
 ax_h = Axis(fig[4, 1]; title=L"Height, $h$", axis_kwargs...)
 
 n = Observable(1)
@@ -79,18 +77,18 @@ n = Observable(1)
 data = jldopen(fields_filename, "r") do file
     times = file["times"]
     ω_data = file["ω"]
-    v_norm_data = file["v_norm"]
+    s_data = file["s"]
     h_data = file["h"]
-    (times, ω_data, v_norm_data, h_data)
+    (times, ω_data, s_data, h_data)
 end
 
-times, ω_data, v_norm_data, h_data = data
+times, ω_data, s_data, h_data = data
 
 hm_ω = heatmap!(ax_ω, x, y, ω_frame, colorrange=(-1, 1), colormap=:balance)
 Colorbar(fig[2, 2], hm_ω)
 
-hm_v_norm = heatmap!(ax_v_norm, x, y, v_norm_frame, colorrange=(0, 1), colormap=:balance)
-Colorbar(fig[3, 2], hm_v_norm)
+hm_s = heatmap!(ax_s, x, y, s_frame, colorrange=(0, 1), colormap=:balance)
+Colorbar(fig[3, 2], hm_s)
 
 hm_h = heatmap!(ax_h, x, y, h_frame, colormap=:balance)
 Colorbar(fig[4, 2], hm_h)
