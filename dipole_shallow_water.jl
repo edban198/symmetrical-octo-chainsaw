@@ -11,7 +11,8 @@ Ly = 20
 grid = RectilinearGrid(size=(Nx, Ny),
                        x=(0, Lx),
                        y=(-Ly/2, Ly/2),
-                       topology=(Periodic, Bounded, Flat))
+                       topology=(Periodic, Bounded, Flat)
+)
 
 h₀ = 1
 xₕ = 7π/4
@@ -44,19 +45,40 @@ set!(model, uh=uhᵢ, vh=vhᵢ, h=h̄)
 @info "Setting up fields"
 ω = ∂x(v) - ∂y(u)
 s = sqrt(u^2 + v^2)
+compute!(ω)
+compute!(s)
 
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-2, stop_time=10)
+simulation = Simulation(model, Δt=1e-3, stop_time=100)
+
+@info "Set up progress message and timestep wizard"
+wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-3)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(100))
+
+function progress_message(sim)
+    max_abs_u = maximum(abs, sim.model.velocities.u)
+    max_abs_v = maximum(abs, sim.model.velocities.v)
+    walltime = prettytime(sim.run_wall_time)
+
+    return @info @sprintf("Iteration: %04d, time: %1.3f, Δt: %.2e, max(|u|) = %.1e, max(|v|) = %.1e, wall time: %s\n",
+                          iteration(sim), time(sim), sim.Δt, max_abs_u, max_abs_v, walltime)
+end
+
+add_callback!(simulation, progress_message, IterationInterval(100))
 
 @info "Set up output writers"
 fields_filename = joinpath(@__DIR__, "dipole_shallow_water_fields.jld2")
 simulation.output_writers[:fields] = JLD2OutputWriter(model, (; ω, s, h),
                                                       filename=fields_filename,
-                                                      schedule=TimeInterval(1),
-                                                      overwrite_existing=true)
+                                                      schedule=TimeInterval(0.5),
+                                                      overwrite_existing=true
+)
 
 @info "Run the simulation"
 run!(simulation)
+
+ω_timeseries = FieldTimeSeries(fields_filename, "ω")
+println("Saved times: ", ω_timeseries.times)
 
 # Visualization:
 @info "Plot graphs and make animations"
@@ -74,23 +96,29 @@ ax_h = Axis(fig[4, 1]; title=L"Height, $h$", axis_kwargs...)
 n = Observable(1)
 
 @info "Load data from JLD2 file"
-data = jldopen(fields_filename, "r") do file
-    times = file["times"]
-    ω_data = file["ω"]
-    s_data = file["s"]
-    h_data = file["h"]
-    (times, ω_data, s_data, h_data)
-end
+ω_timeseries = FieldTimeSeries(fields_filename, "ω")
+s_timeseries = FieldTimeSeries(fields_filename, "s")
+h_timeseries = FieldTimeSeries(fields_filename, "h")
 
-times, ω_data, s_data, h_data = data
+times = ω_timeseries.times
 
-hm_ω = heatmap!(ax_ω, x, y, ω_frame, colorrange=(-1, 1), colormap=:balance)
+n = Observable(1)
+
+ω = @lift ω_timeseries[$n]
+s = @lift s_timeseries[$n]
+h = @lift h_timeseries[$n]
+
+ωlims = (minimum(abs,interior(ω_timeseries)), maximum(abs,interior(ω_timeseries)))
+slims = (minimum(abs,interior(s_timeseries)), maximum(abs,interior(s_timeseries)))
+hlims = (minimum(abs,interior(h_timeseries)), maximum(abs,interior(h_timeseries)))
+
+hm_ω = heatmap!(ax_ω, x, y, ω, colormap=:balance, colorrange = ωlims)
 Colorbar(fig[2, 2], hm_ω)
 
-hm_s = heatmap!(ax_s, x, y, s_frame, colorrange=(0, 1), colormap=:balance)
+hm_s = heatmap!(ax_s, x, y, s, colormap=:speed, colorrange = slims)
 Colorbar(fig[3, 2], hm_s)
 
-hm_h = heatmap!(ax_h, x, y, h_frame, colormap=:balance)
+hm_h = heatmap!(ax_h, x, y, h, colormap=:balance, colorrange = hlims)
 Colorbar(fig[4, 2], hm_h)
 
 #title = L"Total vorticity, ω from a dipole from the streamfunction $\Psi = A_{0}e^{-\alpha_{0}((x - x_{0})^2 + (y - y_{0})^2)} + A_{0}e^{-\alpha_{0}((x - x_{0})^2 + (y + y_{0})^2)}$ with $(x_{0},y_{0})=(\pi,0)$"
@@ -101,7 +129,7 @@ fig[1, :] = Label(fig, title, fontsize=24, tellwidth=false)
 save("dipole_shallow_water_total_vorticity.png", fig)
 
 frames = 1:length(times)
-record(fig, "dipole_shallow_water_total_vorticity_animation.mp4", frames, framerate=12) do i
+record(fig, "dipole_shallow_water_total_vorticity_animation.mp4", frames, framerate=8) do i
     n[] = i
 end
 
@@ -119,8 +147,8 @@ y₀ = 0.5
 # Define U(x, y) and V(x, y)
 
 # Evaluate U and V
-U_vals = u₀.(X, Y)
-V_vals = v₀.(X, Y)
+U_vals = uᵢ.(X, Y)
+V_vals = vᵢ.(X, Y)
 
 # Create figure
 fig = Figure(resolution=(1200, 800))
