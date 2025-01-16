@@ -177,19 +177,14 @@ Label(fig[1, 1:4], "Snapshots of the evolution of a dipole in shallow water", fo
 axis_kwargs_2 = (xlabel="x", ylabel="y",
                  xlabelsize=42, ylabelsize=42,
                  xticklabelsize=32, yticklabelsize=32,
-                 limits=((0, 2π), (-10, 10)),
-                 aspect=DataAspect())
+                 limits=((0, 2π), (-10, 10)))
 
-# Create dedicated space for the left column labels
-row_titles_width = 100  # Adjust the width of the first column to leave enough space for plots
-
-fig.layout[2:4, 0] = GridLayout(width=row_titles_width)
-
+#=
 # Add row titles (properly aligned in their own space)
 Label(fig.layout[2, 0], L"Vorticity $ω$", rotation=π/2, fontsize=42, halign=:center)
 Label(fig.layout[3, 0], L"Velocity Magnitude $|v|$", rotation=π/2, fontsize=42, halign=:center)
 Label(fig.layout[4, 0], L"Height $h$", rotation=π/2, fontsize=42, halign=:center)
-
+=#
 # Plot timesnaps
 for (i, idx) in enumerate(selected_indices)
     ω_snapshot = ω_timeseries[idx]
