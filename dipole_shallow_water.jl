@@ -4,7 +4,7 @@ using Printf, CairoMakie
 
 @info "Set up model"
 
-Nx, Ny = 64, 32
+Nx, Ny = 256, 64
 Lx = 2π
 Ly = 20
 
@@ -50,7 +50,7 @@ set!(model, uh=uhᵢ, vh=vhᵢ, h=h̄)
 s = Field(sqrt(u^2 + v^2))
 
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-3, stop_time=10)
+simulation = Simulation(model, Δt=1e-3, stop_time=12)
 
 @info "Set up progress message and timestep wizard"
 wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-3)
@@ -68,8 +68,8 @@ end
 add_callback!(simulation, progress_message, IterationInterval(100))
 
 @info "Set up output writers"
-fields_filename = joinpath(@__DIR__, "dipole_shallow_water_fields")
-heights_filename = joinpath(@__DIR__, "dipole_shallow_water_heights")
+fields_filename = joinpath(@__DIR__, "OUTPUTS/dipole_shallow_water_fields")
+heights_filename = joinpath(@__DIR__, "OUTPUTS/dipole_shallow_water_heights")
 simulation.output_writers[:fields] = JLD2OutputWriter(model, (; ω, s),
                                                       schedule = TimeInterval(0.5),
                                                       filename = fields_filename * ".jld2",
@@ -129,10 +129,10 @@ title = @lift @sprintf("t = %.1f", times[$n])
 fig[1, :] = Label(fig, title, fontsize=24, tellwidth=false)
 
 @info "Save plots and record animation"
-save("dipole_shallow_water_total_vorticity.png", fig)
+save("OUTPUTS/dipole_shallow_water_total_vorticity.png", fig)
 
 frames = 1:length(times)
-record(fig, "dipole_shallow_water_total_vorticity_animation.mp4", frames, framerate=8) do i
+record(fig, "OUTPUTS/dipole_shallow_water_total_vorticity_animation.mp4", frames, framerate=8) do i
     n[] = i
 end
 
@@ -161,7 +161,7 @@ ax = Axis(fig[1, 1]; limits = ((0, 2π), (-10, 10)),
 arrows!(ax, vec(X), vec(Y), vec(U_vals), vec(V_vals))
 
 # Save figure
-save("background_velocity_field.png", fig)
+save("OUTPUTS/background_velocity_field.png", fig)
 
 #Timesnaps plot
 
@@ -207,4 +207,4 @@ Colorbar(fig[3, 5]; colormap=:speed, colorrange=slims, ticklabelsize=32, labelsi
 Colorbar(fig[4, 5]; colormap=:balance, colorrange=hlims, ticklabelsize=32, labelsize=32, label = L"Height $h$")
 
 # Save the figure
-save("dipole_shallow_water_snapshots.png", fig)
+save("OUTPUTS/dipole_shallow_water_snapshots.png", fig)
