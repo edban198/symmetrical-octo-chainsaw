@@ -18,4 +18,4 @@
 #SBATCH --mail-user sfbj55@durham.ac.uk
 
 # Run the program
-./julia-1.11.2/bin/julia ./CODE/symmetrical-octo-chainsaw/dipole_shallow_water.jl
+./julia-1.11.2/bin/julia ./dipole_shallow_water.jl
