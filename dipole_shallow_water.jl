@@ -4,7 +4,7 @@ using Printf, CairoMakie
 
 @info "Set up model"
 
-Nx, Ny = 1024, 256
+Nx, Ny = 64, 16
 Lx = 2π
 Ly = 20
 
@@ -50,10 +50,10 @@ set!(model, uh=uhᵢ, vh=vhᵢ, h=h̄)
 s = Field(sqrt(u^2 + v^2))
 
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-4, stop_time=12)
+simulation = Simulation(model, Δt=1e-3, stop_time=12)
 
 @info "Set up progress message and timestep wizard"
-wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-4)
+wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-3)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(100))
 
 function progress_message(sim)
@@ -137,31 +137,31 @@ record(fig, "./OUTPUTS/dipole_shallow_water_total_vorticity_animation.mp4", fram
 end
 
 # Define a grid
-x = LinRange(0, 2π, 16)
-y = LinRange(-10, 10, 16)
+x = LinRange(π\3, 5π/3, 20)
+y = LinRange(-4, 4, 20)
 X, Y = [xi for xi in x, _ in y], [yi for _ in x, yi in y]
-
-# Parameters
-A₀ = 1
-α₀ = 1
-x₀ = π
-y₀ = 0.5
 
 # Evaluate U and V
 U_vals = uᵢ.(X, Y)
 V_vals = vᵢ.(X, Y)
 
+U_vals_scaled = U_vals ./ (maximum(abs.(U_vals))*2)
+V_vals_scaled = V_vals ./ (maximum(abs.(V_vals))*2)
 # Create figure
-fig = Figure(resolution=(1200, 800))
-ax = Axis(fig[1, 1]; limits = ((0, 2π), (-10, 10)),
-          xlabel = "x", ylabel = "y", title = "Velocity Field with Arrows"
+fig = Figure(size=(1200, 800))
+ax = Axis(fig[1, 1]; limits = ((π\3, 5π/3), (-4, 4)),
+          xlabel = "x", ylabel = "y",
+          xlabelsize = 24, ylabelsize = 24,
+          xticklabelsize = 20, yticklabelsize = 20,
+          xticks = (π\3:π/3:5π/3, ["π/3", "2π/3", "π", "4π/3", "5π/3"]), yticks = (-4:2:4),
+          title = L"Velocity Field of $\Psi$", titlesize = 24
 )
 
 # Add arrows
-arrows!(ax, vec(X), vec(Y), vec(U_vals), vec(V_vals))
+arrows!(ax, vec(X), vec(Y), vec(U_vals_scaled), vec(V_vals_scaled))
 
 # Save figure
-save("./OUTPUTS/background_velocity_field.png", fig)
+save("./OUTPUTS/velocity_field.png", fig)
 
 #Timesnaps plot
 
