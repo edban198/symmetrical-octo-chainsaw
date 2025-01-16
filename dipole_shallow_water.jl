@@ -202,9 +202,9 @@ for (i, idx) in enumerate(selected_indices)
 end
 
 # Add colorbars with larger ticks and labels
-Colorbar(fig[2, 5]; colormap=:balance, colorrange=ωlims, ticklabelsize=32, labelsize=32)
-Colorbar(fig[3, 5]; colormap=:speed, colorrange=slims, ticklabelsize=32, labelsize=32)
-Colorbar(fig[4, 5]; colormap=:balance, colorrange=hlims, ticklabelsize=32, labelsize=32)
+Colorbar(fig[2, 5]; colormap=:balance, colorrange=ωlims, ticklabelsize=32, labelsize=32, label = L"Vorticity $ω$")
+Colorbar(fig[3, 5]; colormap=:speed, colorrange=slims, ticklabelsize=32, labelsize=32, label = L"Velocity Magnitude $|v|$")
+Colorbar(fig[4, 5]; colormap=:balance, colorrange=hlims, ticklabelsize=32, labelsize=32, label = L"Height $h$")
 
 # Save the figure
 save("dipole_shallow_water_snapshots.png", fig)
