@@ -4,7 +4,7 @@ using Printf, CairoMakie
 
 @info "Set up model"
 
-Nx, Ny = 64, 16
+Nx, Ny = 1024, 256
 Lx = 2π
 Ly = 20
 
@@ -50,10 +50,10 @@ set!(model, uh=uhᵢ, vh=vhᵢ, h=h̄)
 s = Field(sqrt(u^2 + v^2))
 
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-3, stop_time=12)
+simulation = Simulation(model, Δt=1e-4, stop_time=12)
 
 @info "Set up progress message and timestep wizard"
-wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-3)
+wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-4)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(100))
 
 function progress_message(sim)
