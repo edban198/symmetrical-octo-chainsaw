@@ -5,15 +5,17 @@
 #cores in each node.
 # X,Y are integers. Refer to table for various combinations
 #SBATCH -N 1
-#SBATCH -c 64
-#SBATCH -p cpu
+#SBATCH -c 4
+#SBATCH --mem=28G
+#SBATCH --gres=gpu:pascal:1
+#SBATCH -p ug-gpu-small
 #SBATCH --qos=short
-#SBATCH -t 18:00:00
+#SBATCH -t 08:00:00
 
-#SBATCH --job-name=RB_cpu_simulation
+#SBATCH --job-name=gpu_diffusion_sim
 
-#SBATCH -o RB_cpu_sim.out
-#SBATCH -e RB_cpu_sim.err
+#SBATCH -o RB_gpu_sim.out
+#SBATCH -e RB_gpu_sim.err
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user sfbj55@durham.ac.uk

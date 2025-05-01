@@ -16,14 +16,14 @@ mkpath(joinpath(@__DIR__, "OUTPUTS"))
 Nx, Ny = 1024, 256
 Lx, Ly = 2π, 20.0
 
-grid = RectilinearGrid(
+grid = RectilinearGrid(GPU();
   size     = (Nx, Ny),
   x        = (0, Lx),
   y        = (-Ly/2, Ly/2),
   topology = (Periodic, Bounded, Flat),
 )
 
-g = 9.81
+const g = 9.81
 model = ShallowWaterModel(
   grid                      = grid,
   gravitational_acceleration = g,
@@ -40,7 +40,7 @@ uh, vh, h = model.solution
 # ---------------------------------------------------------------------------
 @info "Set initial conditions"
 
-A₀, α₀, x₀, y₀, H = 1.0, 1.0, π, 0.5, 15.0
+const A₀, α₀, x₀, y₀, H = 1.0, 1.0, π, 0.5, 15.0
 
 uᵢ(x, y) = A₀*2*(y - y₀)*α₀*exp(-α₀*((x - x₀)^2 + (y - y₀)^2)) -
            A₀*2*(y + y₀)*α₀*exp(-α₀*((x - x₀)^2 + (y + y₀)^2))
