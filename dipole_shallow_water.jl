@@ -177,7 +177,8 @@ Label(fig[1, 1:4], "Snapshots of the evolution of a dipole in shallow water", fo
 axis_kwargs_2 = (xlabel="x", ylabel="y",
                  xlabelsize=42, ylabelsize=42,
                  xticklabelsize=32, yticklabelsize=32,
-                 limits=((0, 2π), (-10, 10)))
+                 limits=((0, 2π), (-10, 10))
+)
 
 #=
 # Add row titles (properly aligned in their own space)

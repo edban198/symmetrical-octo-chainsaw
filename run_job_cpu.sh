@@ -4,7 +4,7 @@
 # Instructing SLURM to locate and assign X number of nodes with Y number of cores in each node.
 # X,Y are integers. Refer to table for various combinations. X will almost always be 1.
 #SBATCH -N 1
-#SBATCH -c 8
+#SBATCH -c 64
 
 # Governs the run time limit and resource limit for the job. 
 # Please pick values from the partition and QOS tables below for various combinations
@@ -17,5 +17,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user sfbj55@durham.ac.uk
 
+cd
+
 # Run the program
-./julia-1.11.2/bin/julia ./dipole_shallow_water.jl
+./julia-1.11.2/bin/julia ./symmetrical-octo-chainsaw/dipole_shallow_water.jl
