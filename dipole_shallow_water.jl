@@ -68,7 +68,7 @@ s = Field(sqrt(u^2 + v^2))  # speed
 # 4) Simulation setup + run
 # ---------------------------------------------------------------------------
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-4, stop_time=12)
+simulation = Simulation(model, Δt=1e-4, stop_time=2)
 
 wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-4)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(500))
@@ -140,8 +140,7 @@ function make_plots()
       yticklabelsize= tick_fs,
       xticks        = (0:π/3:2π, ["0","π/3","2π/3","π","4π/3","5π/3","2π"]),
       yticks        = -5:1:5,
-      limits        = ((0,2π),(-5,5)),
-      titlefontsize = title_fs,
+      limits        = ((0,2π),(-5,5))
     )
 
     n = Observable(1)
