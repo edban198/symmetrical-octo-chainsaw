@@ -4,14 +4,14 @@ using Oceananigans
 using JLD2
 using Printf, CairoMakie
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 0) Ensure OUTPUTS directory exists
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 mkpath(joinpath(@__DIR__, "OUTPUTS"))
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 1) Build the shallow-water model
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @info "Set up model"
 Nx, Ny = 64, 32           # test resolution; bump to 1024×256 when happy
 Lx, Ly = 2π, 20.0
@@ -30,47 +30,41 @@ model = ShallowWaterModel(
   timestepper               = :RungeKutta3,
 )
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 2) Define your explicit dipole initial conditions
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @info "Set initial conditions"
 
 A₀, α₀, x₀, y₀, H = 1.0, 1.0, π, 0.5, 15.0
 
-# analytic velocity components at cell CENTERS
 uᵢ(x, y) = A₀*2*(y - y₀)*α₀*exp(-α₀*((x - x₀)^2 + (y - y₀)^2)) -
            A₀*2*(y + y₀)*α₀*exp(-α₀*((x - x₀)^2 + (y + y₀)^2))
 
 vᵢ(x, y) = -(A₀*2*(x - x₀)*α₀*exp(-α₀*((x - x₀)^2 + (y - y₀)^2)) -
             A₀*2*(x - x₀)*α₀*exp(-α₀*((x - x₀)^2 + (y + y₀)^2)))
 
-# constant height field
 h̄(x, y) = H
+uhᵢ(x, y) = uᵢ(x, y)*h̄(x, y)
+vhᵢ(x, y) = vᵢ(x, y)*h̄(x, y)
 
-# momentum = velocity × height
-uhᵢ(x, y) = uᵢ(x, y) * h̄(x, y)
-vhᵢ(x, y) = vᵢ(x, y) * h̄(x, y)
-
-# write into the model
 set!(model, uh = uhᵢ, vh = vhᵢ, h = h̄)
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 3) Define diagnostics
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @info "Setting up fields"
 u = model.velocities.u
 v = model.velocities.v
 
 ω = Field(∂x(v) - ∂y(u))    # vorticity
-s = Field(sqrt(u^2 + v^2)) # speed
+s = Field(sqrt(u^2 + v^2))  # speed
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 4) Simulation setup + run
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @info "Set up simulation"
 simulation = Simulation(model, Δt=1e-4, stop_time=12)
 
-# CFL‐based timestep wizard + log every 500 iters
 wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-4)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(500))
 
@@ -84,7 +78,6 @@ end
 
 add_callback!(simulation, progress_message, IterationInterval(500))
 
-# output writers (ω & s in one file, h in another)
 fields_file  = joinpath(@__DIR__, "OUTPUTS", "dipole_fields.jld2")
 height_file  = joinpath(@__DIR__, "OUTPUTS", "dipole_height.jld2")
 
@@ -105,9 +98,9 @@ simulation.output_writers[:height] = JLD2OutputWriter(
 @info "Run the simulation"
 run!(simulation)
 
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # 5) Load results and plot + animate
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @info "Load data from JLD2 files"
 ω_ts = FieldTimeSeries(fields_file, "ω")
 s_ts = FieldTimeSeries(fields_file, "s")
@@ -125,15 +118,23 @@ function make_plots()
 
     fig = Figure(resolution=(1200,1600), fontsize=32)
 
-    fontsize = 28
-    axis_kwargs = (
-      xlabel="x", ylabel="y",
-      xlabelsize=fontsize, ylabelsize=fontsize,
-      xticklabelsize=fontsize, yticklabelsize=fontsize,
-      xticks=(0:π/3:2π, ["0","π/3","2π/3","π","4π/3","5π/3","2π"]),
-      yticks=-10:2:10,
-      limits=((0,2π),(-10,10)),
-      titlefontsize=fontsize,
+    # tightened font sizes
+    axis_fs   = 26
+    tick_fs   = 22
+    title_fs  = 30
+    cbar_fs   = 20
+
+    common_kwargs = (
+      xlabel        = "x",
+      ylabel        = "y",
+      xlabelsize    = axis_fs,
+      ylabelsize    = axis_fs,
+      xticklabelsize= tick_fs,
+      yticklabelsize= tick_fs,
+      xticks        = (0:π/3:2π, ["0","π/3","2π/3","π","4π/3","5π/3","2π"]),
+      yticks        = -5:1:5,                    # now ±5
+      limits        = ((0,2π),(-5,5)),           # y ∈ [-5,5]
+      titlefontsize = title_fs,
     )
 
     n = Observable(1)
@@ -141,25 +142,32 @@ function make_plots()
     s_field = @lift s_ts[$n]
     h_field = @lift h_ts[$n]
 
-    function add_row(row, title, field, crange, cmap, label)
-        ax = Axis(fig[row,1]; title=title, axis_kwargs...)
-        hm = heatmap!(ax, x, y, field; colormap=cmap, colorrange=crange)
-        Colorbar(fig[row,2], hm; label=label, labelsize=20, ticklabelsize=20)
+    function add_row(row, title, field, crange, cmap, cbar_label)
+      ax = Axis(fig[row,1];
+                title = title,
+                common_kwargs...,
+                titleposition=:top)
+      hm = heatmap!(ax, x, y, field;
+                    colormap  = cmap,
+                    colorrange= crange)
+      Colorbar(fig[row,2], hm;
+               label          = cbar_label,
+               labelsize      = cbar_fs,
+               ticklabelsize  = tick_fs) 
     end
 
-    add_row(2, L"Vorticity $ω$",       ω_field, ωlims, :balance, L"$s^{-1}$")
-    add_row(3, L"Speed $|\mathbf v|$", s_field, slims, :speed, L"m/s")
-    add_row(4, L"Height $h$",          h_field, hlims, :balance, L"m")
+    add_row(2, L"Vorticity, $ω$",      ω_field, ωlims, :balance, L"Vorticity [s⁻¹]")
+    add_row(3, L"Speed, $|\mathbf v|$", s_field, slims, :speed, L"|v| [m/s]")
+    add_row(4, L"Height, $h$",         h_field, hlims, :balance, L"Height [m]")
 
-    fig[1,:] = Label(fig, @lift @sprintf("t = %.1f", times[$n]),
-                     fontsize=24, tellwidth=false)
+    fig[1,:] = Label(fig, @lift @sprintf("t = %.1f", times[$n]);
+                     fontsize=28, tellwidth=false)
 
-    png = joinpath(@__DIR__, "OUTPUTS", "dipole_vorticity.png")
-    mp4 = joinpath(@__DIR__, "OUTPUTS", "dipole_vorticity.mp4")
-
-    save(png, fig)
-    record(fig, mp4, 1:length(times); framerate=8) do i
-        n[] = i
+    save(joinpath(@__DIR__, "OUTPUTS", "dipole_vorticity.png"), fig)
+    record(fig,
+           joinpath(@__DIR__, "OUTPUTS", "dipole_vorticity.mp4"),
+           1:length(times); framerate=8) do i
+      n[] = i
     end
 end
 
