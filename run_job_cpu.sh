@@ -22,4 +22,4 @@
 cd
 
 # Run the program
-./julia-1.11.2/bin/julia ./symmetrical-octo-chainsaw/dipole_shallow_water.jl
+./julia-1.11.2/bin/julia ./CODE/symmetrical-octo-chainsaw/dipole_shallow_water.jl
