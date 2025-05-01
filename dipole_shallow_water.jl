@@ -150,8 +150,7 @@ function make_plots()
     function add_row(row, title, field, crange, cmap, cbar_label)
       ax = Axis(fig[row,1];
                 title = title,
-                common_kwargs...,
-                titleposition = :top)
+                common_kwargs...)
       hm = heatmap!(ax, x, y, field;
                     colormap   = cmap,
                     colorrange = crange)
