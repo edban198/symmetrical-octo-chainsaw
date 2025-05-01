@@ -4,7 +4,8 @@ using Printf, CairoMakie
 
 @info "Set up model"
 
-Nx, Ny = 1024, 256
+Nx, Ny = 64, 32
+#Nx, Ny = 1024, 256
 Lx = 2π
 Ly = 20
 
@@ -19,7 +20,7 @@ xₕ = 7π/4
 yₕ = 0
 σ = 2
 
-bottom(x, y) = h₀ * exp(-σ * ((x - xₕ)^2 + (y - yₕ)^2))
+#bottom(x, y) = h₀ * exp(-σ * ((x - xₕ)^2 + (y - yₕ)^2))
 gravitational_acceleration = 9.81
 
 # Model:
@@ -97,9 +98,16 @@ println("Saved times: ", ω_timeseries.times)
 
 x, y = xnodes(ω), ynodes(ω)
 
-fig = Figure(size=(1200, 1600), fontsize=20)
+fig = Figure(size=(1200, 1600), fontsize=32)
 
-axis_kwargs = (xlabel="x", ylabel="y")
+fontsize = 28
+axis_kwargs = (xlabel="x", ylabel="y",
+    xlabelsize=fontsize, ylabelsize=fontsize,
+    xticklabelsize=fontsize, yticklabelsize=fontsize,
+    xticks=(0:π/3:2π, ["0", "π/3", "2π/3", "π", "4π/3", "5π/3", "2π"]),
+    yticks=(-10:2:10),
+    limits = ((0,2π),(-5, 5)),
+    titlefontsize=fontsize, titlesize=fontsize,)
 
 ax_ω = Axis(fig[2, 1]; title=L"Vorticity, $ω$", axis_kwargs...)
 ax_s = Axis(fig[3, 1]; title=L"Velocity magnitude, $|\mathbf{v}|$", axis_kwargs...)
@@ -115,14 +123,22 @@ h = @lift h_timeseries[$n]
 slims = (minimum(interior(s_timeseries)), maximum(interior(s_timeseries)))
 hlims = (minimum(interior(h_timeseries)), maximum(interior(h_timeseries)))
 
+labelsize = 20
+ticklabelsize = 20
 hm_ω = heatmap!(ax_ω, x, y, ω, colormap=:balance, colorrange=ωlims)
-Colorbar(fig[2, 2], hm_ω)
+Colorbar(fig[2, 2], hm_ω;
+    labelsize=labelsize, ticklabelsize=ticklabelsize,
+    label=L"$s^{-1}$")
 
 hm_s = heatmap!(ax_s, x, y, s, colormap=:speed, colorrange=slims)
-Colorbar(fig[3, 2], hm_s)
+Colorbar(fig[3, 2], hm_s;
+    labelsize=labelsize, ticklabelsize=ticklabelsize,
+    label=L"$(ms^{-1})$")
 
 hm_h = heatmap!(ax_h, x, y, h, colormap=:balance, colorrange=hlims)
-Colorbar(fig[4, 2], hm_h)
+Colorbar(fig[4, 2], hm_h;
+    labelsize=labelsize, ticklabelsize=ticklabelsize,
+    label=L"$(m)$")
 
 #title = L"Total vorticity, ω from a dipole from the streamfunction $\Psi = A_{0}e^{-\alpha_{0}((x - x_{0})^2 + (y - y_{0})^2)} + A_{0}e^{-\alpha_{0}((x - x_{0})^2 + (y + y_{0})^2)}$ with $(x_{0},y_{0})=(\pi,0)$"
 title = @lift @sprintf("t = %.1f", times[$n])
