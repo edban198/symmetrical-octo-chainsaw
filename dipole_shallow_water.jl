@@ -13,7 +13,7 @@ mkpath(joinpath(@__DIR__, "OUTPUTS"))
 # 1) Build the shallow-water model
 # ---------------------------------------------------------------------------
 @info "Set up model"
-Nx, Ny = 64, 32           # test resolution; bump to 1024×256 when happy
+Nx, Ny = 64, 32           # test resolution; bump to 1024×256 later
 Lx, Ly = 2π, 20.0
 
 grid = RectilinearGrid(
@@ -29,6 +29,11 @@ model = ShallowWaterModel(
   gravitational_acceleration = g,
   timestepper               = :RungeKutta3,
 )
+
+# ---------------------------------------------------------------------------
+# 1b) Unpack the prognostic fields so `h` exists
+# ---------------------------------------------------------------------------
+uh, vh, h = model.solution
 
 # ---------------------------------------------------------------------------
 # 2) Define your explicit dipole initial conditions
@@ -88,8 +93,9 @@ simulation.output_writers[:fields] = JLD2OutputWriter(
   overwrite_existing = true,
 )
 
+# ← here we now use a *named* tuple (; h) so that it writes the field "h"
 simulation.output_writers[:height] = JLD2OutputWriter(
-  model, (h,);
+  model, (; h);
   schedule           = TimeInterval(0.5),
   filename           = height_file,
   overwrite_existing = true,
@@ -118,7 +124,7 @@ function make_plots()
 
     fig = Figure(resolution=(1200,1600), fontsize=32)
 
-    # tightened font sizes
+    # tightened font sizes and y-limits ±5
     axis_fs   = 26
     tick_fs   = 22
     title_fs  = 30
@@ -132,8 +138,8 @@ function make_plots()
       xticklabelsize= tick_fs,
       yticklabelsize= tick_fs,
       xticks        = (0:π/3:2π, ["0","π/3","2π/3","π","4π/3","5π/3","2π"]),
-      yticks        = -5:1:5,                    # now ±5
-      limits        = ((0,2π),(-5,5)),           # y ∈ [-5,5]
+      yticks        = -5:1:5,
+      limits        = ((0,2π),(-5,5)),
       titlefontsize = title_fs,
     )
 
@@ -146,22 +152,22 @@ function make_plots()
       ax = Axis(fig[row,1];
                 title = title,
                 common_kwargs...,
-                titleposition=:top)
+                titleposition = :top)
       hm = heatmap!(ax, x, y, field;
-                    colormap  = cmap,
-                    colorrange= crange)
+                    colormap   = cmap,
+                    colorrange = crange)
       Colorbar(fig[row,2], hm;
-               label          = cbar_label,
-               labelsize      = cbar_fs,
-               ticklabelsize  = tick_fs) 
+               label         = cbar_label,
+               labelsize     = cbar_fs,
+               ticklabelsize = tick_fs)
     end
 
-    add_row(2, L"Vorticity, $ω$",      ω_field, ωlims, :balance, L"Vorticity [s⁻¹]")
-    add_row(3, L"Speed, $|\mathbf v|$", s_field, slims, :speed, L"|v| [m/s]")
-    add_row(4, L"Height, $h$",         h_field, hlims, :balance, L"Height [m]")
+    add_row(2, L"Vorticity, $ω$",       ω_field, ωlims, :balance, L"Vorticity [s⁻¹]")
+    add_row(3, L"Speed, $|\mathbf v|$",  s_field, slims, :speed,   L"|v| [m/s]")
+    add_row(4, L"Height, $h$",          h_field, hlims, :balance, L"Height [m]")
 
     fig[1,:] = Label(fig, @lift @sprintf("t = %.1f", times[$n]);
-                     fontsize=28, tellwidth=false)
+                     fontsize = 28, tellwidth = false)
 
     save(joinpath(@__DIR__, "OUTPUTS", "dipole_vorticity.png"), fig)
     record(fig,
