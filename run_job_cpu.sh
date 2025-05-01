@@ -1,22 +1,24 @@
 #!/bin/bash
-# This line is required to inform the Linux command line to parse the script using the bash shell
 
-# Instructing SLURM to locate and assign X number of nodes with Y number of cores in each node.
-# X,Y are integers. Refer to table for various combinations. X will almost always be 1.
+# Instructing SLURM to locate and assign
+#X number of nodes with Y number of
+#cores in each node.
+# X,Y are integers. Refer to table for various combinations
 #SBATCH -N 1
 #SBATCH -c 64
-
-# Governs the run time limit and resource limit for the job. 
-# Please pick values from the partition and QOS tables below for various combinations
 #SBATCH -p cpu
 #SBATCH --qos=short
-#SBATCH -t 01:00:00
+#SBATCH -t 18:00:00
 
-#SBATCH --job-name=dipole_cpu_simulation
+#SBATCH --job-name=RB_cpu_simulation
+
+#SBATCH -o RB_cpu_sim.out
+#SBATCH -e RB_cpu_sim.err
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user sfbj55@durham.ac.uk
 
+# Run the program
 cd
 
 # Run the program
