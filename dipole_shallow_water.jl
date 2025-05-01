@@ -115,7 +115,8 @@ times = ω_ts.times
 println("Saved times: ", times)
 
 function make_plots()
-    x, y = xnodes(grid), ynodes(grid)
+    x = xnodes(grid, Center)
+    y = ynodes(grid, Center)
 
     # color ranges
     ωlims = extrema(interior(ω_ts))
