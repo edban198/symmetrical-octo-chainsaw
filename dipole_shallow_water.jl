@@ -2,6 +2,7 @@ using Oceananigans
 using JLD2
 using Printf, CairoMakie
 using FilePathsBase: mkpath
+using FilePathsBase
 
 # Ensure OUTPUTS directory exists
 mkpath(joinpath(@__DIR__, "OUTPUTS"))
