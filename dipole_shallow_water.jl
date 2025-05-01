@@ -13,7 +13,7 @@ mkpath(joinpath(@__DIR__, "OUTPUTS"))
 # 1) Build the shallow-water model
 # ---------------------------------------------------------------------------
 @info "Set up model"
-Nx, Ny = 64, 32           # test resolution; bump to 1024×256 later
+Nx, Ny = 1024, 256
 Lx, Ly = 2π, 20.0
 
 grid = RectilinearGrid(
@@ -68,7 +68,7 @@ s = Field(sqrt(u^2 + v^2))  # speed
 # 4) Simulation setup + run
 # ---------------------------------------------------------------------------
 @info "Set up simulation"
-simulation = Simulation(model, Δt=1e-4, stop_time=2)
+simulation = Simulation(model, Δt=1e-4, stop_time=12)
 
 wizard = TimeStepWizard(cfl=0.7, max_change=1.1, max_Δt=1e-4)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(500))
@@ -128,8 +128,7 @@ function make_plots()
     # tightened font sizes and y-limits ±5
     axis_fs   = 26
     tick_fs   = 22
-    title_fs  = 30
-    cbar_fs   = 20
+    cbar_fs   = 26
 
     common_kwargs = (
       xlabel        = "x",
