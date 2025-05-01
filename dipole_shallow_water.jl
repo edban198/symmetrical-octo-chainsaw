@@ -106,8 +106,7 @@ axis_kwargs = (xlabel="x", ylabel="y",
     xticklabelsize=fontsize, yticklabelsize=fontsize,
     xticks=(0:π/3:2π, ["0", "π/3", "2π/3", "π", "4π/3", "5π/3", "2π"]),
     yticks=(-10:2:10),
-    limits = ((0,2π),(-5, 5)),
-    titlefontsize=fontsize, titlesize=fontsize,)
+    limits = ((0,2π),(-5, 5)))
 
 ax_ω = Axis(fig[2, 1]; title=L"Vorticity, $ω$", axis_kwargs...)
 ax_s = Axis(fig[3, 1]; title=L"Velocity magnitude, $|\mathbf{v}|$", axis_kwargs...)
