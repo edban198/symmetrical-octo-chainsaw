@@ -87,7 +87,7 @@ fields_file  = joinpath(@__DIR__, "OUTPUTS", "dipole_fields.jld2")
 height_file  = joinpath(@__DIR__, "OUTPUTS", "dipole_height.jld2")
 
 simulation.output_writers[:fields] = JLD2OutputWriter(
-  model, (ω, s);
+  model, (; ω, s);
   schedule           = TimeInterval(0.5),
   filename           = fields_file,
   overwrite_existing = true,
